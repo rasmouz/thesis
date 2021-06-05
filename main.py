@@ -80,6 +80,9 @@ parser.add_argument('--trainfname', type=str, default='train.txt',
                     help='name of the training file')
 parser.add_argument('--validfname', type=str, default='valid.txt',
                     help='name of the validation file')
+parser.add_argument('--validfname2', type=str, default=None,
+                    help='name of second (optional) validation file')
+
 parser.add_argument('--testfname', type=str, default='test.txt',
                     help='name of the test file')
 parser.add_argument('--collapse_nums_flag', action='store_true',
@@ -105,8 +108,6 @@ parser.add_argument('--pre_validate', action='store_true',
                     help='run validation before training')
 parser.add_argument('--log_validate', action='store_true',
                     help='log validation perplexity while training')
-parser.add_argument('--double_validate', action='store_true',
-                    help='validate on two validation sets (e.g. two different languages)')
 
 #For getting embeddings
 parser.add_argument('--view_emb', action='store_true',
@@ -220,8 +221,10 @@ corpus = data.SentenceCorpus(args.data_dir, args.vocab_file, args.test, args.int
                              collapse_nums_flag=args.collapse_nums_flag,
                              multisentence_test_flag=args.multisentence_test,
                              lower_flag=args.lowercase,
+                             just_validate_flag=args.pre_validate,
                              trainfname=args.trainfname,
                              validfname=args.validfname,
+                             validfname2=args.validfname2,
                              testfname=args.testfname)
 
 if not args.interact:
@@ -233,9 +236,13 @@ if not args.interact:
     else:
         if args.pre_validate:
             val_data = batchify(corpus.valid, args.batch_size)
+            if args.validfname2 is not None:
+                val_data2 = batchify(corpus.valid2, args.batch_size)
         else:
             train_data = batchify(corpus.train, args.batch_size)
             val_data = batchify(corpus.valid, args.batch_size)
+            if args.validfname2 is not None:
+                val_data2 = batchify(corpus.valid2, args.batch_size)
 
 ###############################################################################
 # Build/load the model
@@ -572,15 +579,19 @@ def train():
             if args.log_validate:
                 model.eval()
                 val_loss = evaluate(val_data)
+                if args.validfname2 is not None:
+                    val_loss2 = evaluate(val_data2)
+                else:
+                    val_loss2 = 0.0
                 model.train()
             else:
                 val_loss = 0.0
             elapsed = time.time() - start_time
             print('| epoch {:3d} | {:5d}/{:5d} batches | lr {:02.2f} | ms/batch {:5.2f} | '
-                  ' train ppl {:8.2f} | val ppl {:8.2f}'.format(
+                  ' train ppl {:8.2f} | val ppl {:8.2f} | val2 ppl {:8.2f}'.format(
                       epoch, batch, len(train_data) // args.bptt, lr,
                       elapsed * 1000 / args.log_interval, math.exp(cur_loss),
-                      math.exp(val_loss)))
+                      math.exp(val_loss), math.exp(val_loss2)))
             total_loss = 0.
             start_time = time.time()
 
