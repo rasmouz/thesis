@@ -573,7 +573,7 @@ def train():
                   ' train ppl {:8.2f} | val ppl {:8.2f}'.format(
                       epoch, batch, len(train_data) // args.bptt, lr,
                       elapsed * 1000 / args.log_interval, math.exp(cur_loss),
-                      math.exp(cur_loss)))
+                      math.exp(val_loss)))
             total_loss = 0.
             start_time = time.time()
 
