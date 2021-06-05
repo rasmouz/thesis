@@ -35,8 +35,10 @@ class SentenceCorpus(object):
     def __init__(self, path, vocab_file, test_flag=False, interact_flag=False,
                  checkpoint_flag=False, predefined_vocab_flag=False, lower_flag=False,
                  collapse_nums_flag=False,multisentence_test_flag=False,generate_flag=False,
+                 just_validate_flag=False,
                  trainfname='train.txt',
                  validfname='valid.txt',
+                 validfname2=None,
                  testfname='test.txt'):
         self.lower = lower_flag
         self.collapse_nums = collapse_nums_flag
@@ -45,6 +47,9 @@ class SentenceCorpus(object):
             self.dictionary = Dictionary()
             self.train = self.tokenize(os.path.join(path, trainfname))
             self.valid = self.tokenize_with_unks(os.path.join(path, validfname))
+            if validfname2 is not None:
+                self.valid2 = self.tokenize_with_unks(os.path.join(path, validfname2))
+            # self.valid = self.tokenize_with_unks(os.path.join(path, validfname))
             try:
                 # don't require a test set at train time,
                 # but if there is one, get a sense of whether unks will be required
@@ -67,9 +72,13 @@ class SentenceCorpus(object):
                     self.test = self.sent_tokenize_with_unks(os.path.join(path, testfname))
             elif checkpoint_flag or predefined_vocab_flag:
                 # load from a checkpoint
-                self.train = self.tokenize_with_unks(os.path.join(path, trainfname))
+                if just_validate_flag:
+                    self.train = None
+                else:
+                    self.tokenize_with_unks(os.path.join(path, trainfname))
                 self.valid = self.tokenize_with_unks(os.path.join(path, validfname))
-
+                if validfname2 is not None:
+                    self.valid2 = self.tokenize_with_unks(os.path.join(path, validfname2))
 
     def save_dict(self, path):
         """ Saves dictionary to disk """

@@ -103,6 +103,10 @@ parser.add_argument('--interact', action='store_true',
                     help='run a trained network interactively')
 parser.add_argument('--pre_validate', action='store_true',
                     help='run validation before training')
+parser.add_argument('--log_validate', action='store_true',
+                    help='log validation perplexity while training')
+parser.add_argument('--double_validate', action='store_true',
+                    help='validate on two validation sets (e.g. two different languages)')
 
 #For getting embeddings
 parser.add_argument('--view_emb', action='store_true',
@@ -565,9 +569,12 @@ def train():
 
         if batch % args.log_interval == 0 and batch > 0:
             cur_loss = total_loss / args.log_interval
-            model.eval()
-            val_loss = evaluate(val_data)
-            model.train()
+            if args.log_validate:
+                model.eval()
+                val_loss = evaluate(val_data)
+                model.train()
+            else:
+                val_loss = 0.0
             elapsed = time.time() - start_time
             print('| epoch {:3d} | {:5d}/{:5d} batches | lr {:02.2f} | ms/batch {:5.2f} | '
                   ' train ppl {:8.2f} | val ppl {:8.2f}'.format(
