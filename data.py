@@ -75,7 +75,7 @@ class SentenceCorpus(object):
                 if just_validate_flag:
                     self.train = None
                 else:
-                    self.tokenize_with_unks(os.path.join(path, trainfname))
+                    self.train = self.tokenize_with_unks(os.path.join(path, trainfname))
                 self.valid = self.tokenize_with_unks(os.path.join(path, validfname))
                 if validfname2 is not None:
                     self.valid2 = self.tokenize_with_unks(os.path.join(path, validfname2))
