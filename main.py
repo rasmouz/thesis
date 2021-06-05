@@ -610,10 +610,14 @@ if not args.test and not args.interact and not args.pre_validate:
             epoch_start_time = time.time()
             train()
             val_loss = evaluate(val_data)
+            if args.validfname2 is not None:
+                val_loss2 = evaluate(val_data2)
+            else:
+                val_loss2 = 0.0
             print('-' * 89)
             print('| end of epoch {:3d} | time: {:5.2f}s | lr: {:4.8f} | '
-                  'valid ppl {:8.2f}'.format(epoch, (time.time() - epoch_start_time),
-                                             lr, math.exp(val_loss)))
+                  'valid ppl {:8.2f} | valid2 ppl {:8.2f}'.format(epoch, (time.time() - epoch_start_time),
+                                             lr, math.exp(val_loss), math.exp(val_loss2)))
             print('-' * 89)
             # Save the model if the validation loss is the best we've seen so far.
             if not best_val_loss or val_loss < best_val_loss:
