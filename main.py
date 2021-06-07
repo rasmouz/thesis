@@ -583,18 +583,19 @@ def train():
                     val_loss2 = evaluate(val_data2)
                 else:
                     val_loss2 = 0.0
-                model.train()
+                elapsed = time.time() - start_time
                 print('| epoch {:3d} | {:5d}/{:5d} batches | lr {:02.2f} | ms/batch {:5.2f} | '
                       ' train ppl {:8.2f} | val ppl {:8.2f} | val2 ppl {:8.2f}'.format(
                           epoch, batch, len(train_data) // args.bptt, lr,
                           elapsed * 1000 / args.log_interval, math.exp(cur_loss),
                           math.exp(val_loss), math.exp(val_loss2)))
+                model.train()
             else:
-            elapsed = time.time() - start_time
-            print('| epoch {:3d} | {:5d}/{:5d} batches | lr {:02.2f} | ms/batch {:5.2f} | '
-                  ' train ppl {:8.2f}'.format(
-                      epoch, batch, len(train_data) // args.bptt, lr,
-                      elapsed * 1000 / args.log_interval, math.exp(cur_loss)))
+                elapsed = time.time() - start_time
+                print('| epoch {:3d} | {:5d}/{:5d} batches | lr {:02.2f} | ms/batch {:5.2f} | '
+                      ' train ppl {:8.2f}'.format(
+                          epoch, batch, len(train_data) // args.bptt, lr,
+                          elapsed * 1000 / args.log_interval, math.exp(cur_loss)))
             total_loss = 0.
             start_time = time.time()
 
