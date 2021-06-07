@@ -88,4 +88,4 @@ print("english p-values: V3 {} Det1 {}".format(stats.ttest_rel(eg[2],eu[2])[1], 
 print('-'*65)
 print("dutch grammatical:  V3 {} Det1 {}".format(dg[0], dg[1]))
 print("dutch ungrammatical: V3 {} Det1 {}".format(du[0], du[1]))
-print("english p-values: V3 {} Det1 {}".format(stats.ttest_rel(dg[2],du[2])[1], stats.ttest_rel(dg[3],du[3])[1]))
+print("dutch p-values: V3 {} Det1 {}".format(stats.ttest_rel(dg[2],du[2])[1], stats.ttest_rel(dg[3],du[3])[1]))
