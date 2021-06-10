@@ -58,8 +58,10 @@ def get_surprisals(file, ignore_indices, grammatical=True):
         first_line = f.readline()
         for line in f:
             split = line.split()
-
-            sentence_index = int(split[1])
+            try:
+                sentence_index = int(split[1])
+            except ValueError:
+                continue
             surprisals[sentence_index].append(float(split[4]))
     for i in range(len(surprisals)):
         if ignore_indices[i+1] is not None:
