@@ -97,14 +97,16 @@ def print_results(language, folder, indices):
         plt.xticks([i for i in range(len(grammatical[2]))], list(grammatical[2].keys()))
         plt.ylabel('surprisal')
         plt.xlabel('sentence index')
-        plt.title('V3'+language)
+        plt.title('V3 '+language)
+        plt.savefig('V3'+language+'.pdf', format='pdf')
         plt.show()
         plt.bar([i-.2 for i in range(len(grammatical[3]))],list(grammatical[3].values()), width=.4)
         plt.bar([i+.2 for i in range(len(ungrammatical[3]))],list(ungrammatical[3].values()), width=.4)
         plt.xticks([i for i in range(len(grammatical[3]))], list(grammatical[3].keys()))
         plt.ylabel('surprisal')
         plt.xlabel('sentence index')
-        plt.title('Det1'+language)
+        plt.title('Det1 '+language)
+        plt.savefig('Det1'+language+'.pdf', format='pdf')
         plt.show()
 
 folder = args.data_dir
