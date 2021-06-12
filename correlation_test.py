@@ -18,6 +18,8 @@ parser.add_argument('--plot_correlation', action='store_true',
                     help='plot the reading times vs the surprisals to visualize correlation')
 parser.add_argument('--means', action='store_true',
                     help='print correlation between mean surprisals or reading times over all 16 test sentences')
+parser.add_argument('--surprisal_suffix', type=str, default='',
+                    help='suffix of surprisal files, such as `_bi` or `_mono`')
 args = parser.parse_args()
 
 def get_reading_times(file):
@@ -143,8 +145,8 @@ ignore_nl = {
 }
 
 if args.language in ['english', None]:
-    sur_en_gram = get_surprisals(args.surprisal_dir+"/english_gram_result.txt", ignore_en)
-    sur_en_ungram = get_surprisals(args.surprisal_dir+"/english_ungram_result.txt", ignore_en, grammatical=False)
+    sur_en_gram = get_surprisals(args.surprisal_dir+"/english_gram_result"+args.surprisal_suffix+".txt", ignore_en)
+    sur_en_ungram = get_surprisals(args.surprisal_dir+"/english_ungram_result"+args.surprisal_suffix+".txt", ignore_en, grammatical=False)
     rt_en_gram, rt_en_ungram = get_reading_times(args.rt_dir+"RTdata_nl_en.csv")
     spearman_gram = stats.spearmanr(sur_en_gram.flatten(), rt_en_gram.flatten())
     spearman_ungram = stats.spearmanr(sur_en_ungram.flatten(), rt_en_ungram.flatten())
@@ -158,8 +160,8 @@ if args.language in ['english', None]:
         print('ungrammatical mean: correlation {:5.3f} p-value {:.2e}'.format(spearman_ungram[0], spearman_ungram[1]))
     print('-'*99)
 if args.language in ['dutch', None]:
-    sur_nl_gram = get_surprisals(args.surprisal_dir+"/dutch_gram_result.txt", ignore_nl)
-    sur_nl_ungram = get_surprisals(args.surprisal_dir+"/dutch_ungram_result.txt", ignore_nl, grammatical=False)
+    sur_nl_gram = get_surprisals(args.surprisal_dir+"/dutch_gram_result"+args.surprisal_suffix+".txt", ignore_nl)
+    sur_nl_ungram = get_surprisals(args.surprisal_dir+"/dutch_ungram_result"+args.surprisal_suffix+".txt", ignore_nl, grammatical=False)
     rt_nl_gram, rt_nl_ungram = get_reading_times(args.rt_dir+"RTdata_nl_nl.csv")
     spearman_gram = stats.spearmanr(sur_nl_gram.flatten(), rt_nl_gram.flatten())
     spearman_ungram = stats.spearmanr(sur_nl_ungram.flatten(), rt_nl_ungram.flatten())
