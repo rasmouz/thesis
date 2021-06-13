@@ -12,7 +12,7 @@ INPUT_HOME = f'{SCRATCH_HOME}/input'
 OUTPUT_HOME = f'{SCRATCH_HOME}/output'
 
 base_call = (f"time python main.py --batch_size '128' --tied --cuda  "
-             "--epochs '10' --trainfname 'train.txt'")
+             "--epochs '10'")
 
 languages = ['mixed']
 hidden_dims = [650]
@@ -39,17 +39,18 @@ for language, dim, seed in settings:
         f"--nhid \'{dim}\' "
         f"--emsize \'{dim}\' "
         f"--seed \'{seed}\' "
-        f"> {OUTPUT_HOME}/{language}/nhid{dim}_seed{seed}.log"
+
     )
     if language == 'english' or 'dutch':
-        f"--validfname \'${language}/valid_mini.txt\' "
-        f"--trainfname \'{language}/train_mini.txt\' "
+        expt_call = expt_call + f"--validfname \'{language}/valid_mini.txt\' "
+        expt_call = expt_call + f"--trainfname \'{language}/train_mini.txt\' "
     elif language == 'mixed':
-        f"--validfname \'dutch/valid_mini.txt\' "
-        f"--validfname2 \'english/valid_mini.txt\' "
-        f"--trainfname \'mixed/train_mini.txt\' "
+        expt_call = expt_call + f"--validfname \'dutch/valid_mini.txt\' "
+        expt_call = expt_call + f"--validfname2 \'english/valid_mini.txt\' "
+        expt_call = expt_call + f"--trainfname \'mixed/train_mini.txt\' "
     else:
         raise ValueError('Woopsie Daisie')
+    expt_call += f"> {OUTPUT_HOME}/{language}/nhid{dim}_seed{seed}.log"
     print(expt_call, file=output_file)
     print(expt_call)
 output_file.close()
