@@ -1,4 +1,5 @@
-#The following code is a modified version of
+#!/bin/bash
+# The following code is a modified version of
 # https://github.com/cdt-data-science/cluster-scripts
 # Originally authored by James Owers (james.f.owers@gmail.com)
 #
@@ -105,6 +106,10 @@ src_path=${repo_home}/data
 # input data directory path on the scratch disk of the node
 dest_path=${SCRATCH_HOME}/input
 mkdir -p ${dest_path}  # make it if required
+mkdir -p ${SCRATCH_HOME}/output
+mkdir -p ${SCRATCH_HOME}/output/mixed
+mkdir -p ${SCRATCH_HOME}/output/english
+mkdir -p ${SCRATCH_HOME}/output/dutch
 
 # Important notes about rsync:
 # * the --compress option is going to compress the data before transfer to send
