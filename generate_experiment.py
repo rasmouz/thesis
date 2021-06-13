@@ -11,7 +11,7 @@ SCRATCH_HOME = f'{SCRATCH_DISK}/{USER}'
 INPUT_HOME = f'{SCRATCH_HOME}/input'
 OUTPUT_HOME = f'{SCRATCH_HOME}/output'
 
-base_call = (f"time python main.py --batch_size '128' --epochs '1' --tied --cuda  "
+base_call = (f"time python main.py --batch_size '128' --tied --cuda  "
              "--epochs '10' --trainfname 'train.txt'")
 
 languages = ['mixed']
@@ -31,32 +31,25 @@ output_file = open("experiment.txt", "w")
 for language, dim, seed in settings:
     # Note that we don't set a seed for rep - a seed is selected at random
     # and recorded in the output data by the python script
+    expt_call = (
+        f"{base_call} "
+        f"--data_dir \'{INPUT_HOME}/\' "
+        f"--model_file \'{OUTPUT_HOME}/{language}/nhid{dim}_seed{seed}.pt\' "
+        f"--vocab_file \'{INPUT_HOME}/{language}/vocab.txt\' "
+        f"--nhid \'{dim}\' "
+        f"--emsize \'{dim}\' "
+        f"--seed \'{seed}\' "
+        f"> {OUTPUT_HOME}/{language}/nhid{dim}_seed{seed}.log"
+    )
     if language == 'english' or 'dutch':
-        expt_call = (
-            f"{base_call} "
-            f"--data_dir \'{INPUT_HOME}/{language}\' "
-            f"--model_file \'{OUTPUT_HOME}/{language}/nhid{dim}_seed{seed}.pt\' "
-            f"--vocab_file \'{INPUT_HOME}/{language}/vocab.txt\' "
-            f"--nhid \'{dim}\' "
-            f"--emsize \'{dim}\' "
-            f"--seed \'{seed}\' "
-            f"> {OUTPUT_HOME}/{language}/nhid{dim}_seed{seed}.log"
-        )
+        f"--validfname \'${language}/valid_mini.txt\' "
+        f"--trainfname \'{language}/train_mini.txt\' "
     elif language == 'mixed':
-        expt_call = (
-            f"{base_call} "
-            f"--data_dir \'{INPUT_HOME}/\' "
-            f"--validfname \'dutch/valid.txt\' "
-            f"--validfname2 \'english/valid.txt\' "
-            f"--trainfname \'mixed/train.txt\' "
-            f"--model_file \'{OUTPUT_HOME}/{language}/nhid{dim}_seed{seed}.pt\' "
-            f"--vocab_file \'{INPUT_HOME}/{language}/vocab.txt\' "
-            f"--nhid \'{dim}\' "
-            f"--emsize \'{dim}\' "
-            f"--seed \'{seed}\' "
-            f"> {OUTPUT_HOME}/{language}/nhid{dim}_seed{seed}.log"
-        )
+        f"--validfname \'dutch/valid_mini.txt\' "
+        f"--validfname2 \'english/valid_mini.txt\' "
+        f"--trainfname \'mixed/train_mini.txt\' "
     else:
         raise ValueError('Woopsie Daisie')
     print(expt_call, file=output_file)
+    print(expt_call)
 output_file.close()
