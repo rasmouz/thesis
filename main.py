@@ -369,12 +369,12 @@ def get_complexity(state, obs, sentid, file=None):
                     outputguesses.append("{:.3f}".format(
                         math.exp(float(nn.functional.log_softmax(guessscores[corpuspos], dim=0)[guess_ix]))))
             outputguesses = args.csep.join(outputguesses)
-            file.write(args.csep.join([str(word), str(sentid), str(corpuspos), str(len(word)),
+            file.write('\n'+args.csep.join([str(word), str(sentid), str(corpuspos), str(len(word)),
                                   str(float(surp)), str(float(Hs[corpuspos])),
                                   str(max(0, float(Hs[max(corpuspos-1, 0)])-float(Hs[corpuspos]))),
                                   str(outputguesses)]))
         else:
-            file.write(args.csep.join([str(word), str(sentid), str(corpuspos), str(len(word)),
+            file.write('\n'+args.csep.join([str(word), str(sentid), str(corpuspos), str(len(word)),
                                   str(float(surp)), str(float(Hs[corpuspos])),
                                   str(max(0, float(Hs[max(corpuspos-1, 0)])-float(Hs[corpuspos])))]))
 
