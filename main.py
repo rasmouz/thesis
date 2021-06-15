@@ -491,7 +491,7 @@ def test_evaluate(test_sentences, data_source):
 
                     else:
                         # output cell state
-                        out.write("\n"+*list(hidden[1][args.view_layer].view(1, -1).data.cpu().numpy().flatten()), sep=' ')
+                        out.write("\n"+(*list(hidden[1][args.view_layer].view(1, -1).data.cpu().numpy().flatten())))
         else:
             data = data.unsqueeze(1) # only needed when a single sentence is being processed
             output, hidden = model(data, hidden)
