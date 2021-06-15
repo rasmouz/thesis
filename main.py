@@ -437,18 +437,18 @@ def test_evaluate(test_sentences, data_source):
     if args.words:
         if not args.nocheader:
             if args.complexn == ntokens:
-                out.write('word{0}sentid{0}sentpos{0}wlen{0}surp{0}entropy{0}entred'.format(args.csep), end='')
+                out.write('word{0}sentid{0}sentpos{0}wlen{0}surp{0}entropy{0}entred'.format(args.csep))
             else:
-                out.write('word{0}sentid{0}sentpos{0}wlen{0}surp{1}{0}entropy{1}{0}entred{1}'.format(args.csep, args.complexn), end='')
+                out.write('word{0}sentid{0}sentpos{0}wlen{0}surp{1}{0}entropy{1}{0}entred{1}'.format(args.csep, args.complexn))
             if args.guess:
                 for i in range(args.guessn):
-                    out.write('\n{0}guess'.format(args.csep)+str(i), end='')
+                    out.write('\n{0}guess'.format(args.csep)+str(i))
                     if args.guessscores:
-                        out.write('\n{0}gscore'.format(args.csep)+str(i), end='')
+                        out.write('\n{0}gscore'.format(args.csep)+str(i))
                     elif args.guessprobs:
-                        out.write('\n{0}gprob'.format(args.csep)+str(i), end='')
+                        out.write('\n{0}gprob'.format(args.csep)+str(i))
                     elif args.guessratios:
-                        out.write('\n{0}gratio'.format(args.csep)+str(i), end='')
+                        out.write('\n{0}gratio'.format(args.csep)+str(i))
             sys.stdout.write('\n')
     if PROGRESS:
         bar = Bar('Processing', max=len(data_source))
