@@ -91,6 +91,8 @@ parser.add_argument('--collapse_nums_flag', action='store_true',
 # Runtime parameters
 parser.add_argument('--test', action='store_true',
                     help='test a trained LM')
+parser.add_argument('--outfname', type=str, default='./test.txt',
+                    help='name of the test file')
 parser.add_argument('--load_checkpoint', action='store_true',
                     help='continue training a pre-trained LM')
 parser.add_argument('--freeze_embedding', action='store_true',
@@ -431,22 +433,22 @@ def test_evaluate(test_sentences, data_source):
         sys.stderr.write('Using beamsize: '+str(ntokens)+'\n')
     else:
         sys.stderr.write('Using beamsize: '+str(args.complexn)+'\n')
-
+    out = open(args.outfname, 'w')
     if args.words:
         if not args.nocheader:
             if args.complexn == ntokens:
-                print('word{0}sentid{0}sentpos{0}wlen{0}surp{0}entropy{0}entred'.format(args.csep), end='')
+                out.write('word{0}sentid{0}sentpos{0}wlen{0}surp{0}entropy{0}entred'.format(args.csep), end='')
             else:
-                print('word{0}sentid{0}sentpos{0}wlen{0}surp{1}{0}entropy{1}{0}entred{1}'.format(args.csep, args.complexn), end='')
+                out.write('word{0}sentid{0}sentpos{0}wlen{0}surp{1}{0}entropy{1}{0}entred{1}'.format(args.csep, args.complexn), end='')
             if args.guess:
                 for i in range(args.guessn):
-                    print('{0}guess'.format(args.csep)+str(i), end='')
+                    out.write('\n{0}guess'.format(args.csep)+str(i), end='')
                     if args.guessscores:
-                        print('{0}gscore'.format(args.csep)+str(i), end='')
+                        out.write('\n{0}gscore'.format(args.csep)+str(i), end='')
                     elif args.guessprobs:
-                        print('{0}gprob'.format(args.csep)+str(i), end='')
+                        out.write('\n{0}gprob'.format(args.csep)+str(i), end='')
                     elif args.guessratios:
-                        print('{0}gratio'.format(args.csep)+str(i), end='')
+                        out.write('\n{0}gratio'.format(args.csep)+str(i), end='')
             sys.stdout.write('\n')
     if PROGRESS:
         bar = Bar('Processing', max=len(data_source))
@@ -474,29 +476,29 @@ def test_evaluate(test_sentences, data_source):
                 nwords += 1
                 if input_word != '<eos>': # not in (input_word,targ_word):
                     if args.verbose_view_layer:
-                        print(input_word,end=" ")
+                        out.write("\n"+input_word,end=" ")
                     # don't output <eos> markers to align with input
                     # output raw activations
                     if args.view_hidden:
                         # output hidden state
-                        print(*list(hidden[0][args.view_layer].view(1, -1).data.cpu().numpy().flatten()), sep=' ')
+                        out.write("\n"+*list(hidden[0][args.view_layer].view(1, -1).data.cpu().numpy().flatten()), sep=' ')
 
                     elif args.view_emb:
                         #Get embedding for input word
                         emb = model.encoder(word_input)
                         # output embedding
-                        print(*list(emb[0].view(1,-1).data.cpu().numpy().flatten()), sep=' ')
+                        out.write("\n"+*list(emb[0].view(1,-1).data.cpu().numpy().flatten()), sep=' ')
 
                     else:
                         # output cell state
-                        print(*list(hidden[1][args.view_layer].view(1, -1).data.cpu().numpy().flatten()), sep=' ')
+                        out.write("\n"+*list(hidden[1][args.view_layer].view(1, -1).data.cpu().numpy().flatten()), sep=' ')
         else:
             data = data.unsqueeze(1) # only needed when a single sentence is being processed
             output, hidden = model(data, hidden)
             try:
                 output_flat = output.view(-1, ntokens)
             except RuntimeError:
-                print("Vocabulary Error! Most likely there weren't unks in training and unks are now needed for testing")
+                out.write("\n"+"Vocabulary Error! Most likely there weren't unks in training and unks are now needed for testing")
                 raise
             loss = criterion(output_flat, targets)
             total_loss += loss.item()
@@ -506,9 +508,9 @@ def test_evaluate(test_sentences, data_source):
             else:
                 # output sentence-level loss
                 if test_sentences:
-                    print(str(sent)+":"+str(loss.item()))
+                    out.write("\n"+str(sent)+":"+str(loss.item()))
                 else:
-                    print(str(loss.item()))
+                    out.write("\n"+str(loss.item()))
 
             if args.adapt:
                 loss.backward()
@@ -530,6 +532,7 @@ def test_evaluate(test_sentences, data_source):
         return total_loss / nwords
     else:
         return total_loss / len(data_source)
+    out.close()
 
 def evaluate(data_source):
     """ Evaluate for validation (no adaptation, no complexity output) """
