@@ -336,7 +336,7 @@ def get_guessscores(state):
     ''' Wrapper that returns top-k guesses of given vector '''
     return get_guesses(state, True)
 
-def get_complexity(state, obs, sentid):
+def get_complexity(state, obs, sentid, file=None):
     ''' Generates complexity output for given state, observation, and sentid '''
     Hs = torch.log2(torch.exp(torch.squeeze(apply(get_entropy, state))))
     surps = torch.log2(torch.exp(apply(get_surps, state)))
@@ -369,12 +369,12 @@ def get_complexity(state, obs, sentid):
                     outputguesses.append("{:.3f}".format(
                         math.exp(float(nn.functional.log_softmax(guessscores[corpuspos], dim=0)[guess_ix]))))
             outputguesses = args.csep.join(outputguesses)
-            print(args.csep.join([str(word), str(sentid), str(corpuspos), str(len(word)),
+            file.write(args.csep.join([str(word), str(sentid), str(corpuspos), str(len(word)),
                                   str(float(surp)), str(float(Hs[corpuspos])),
                                   str(max(0, float(Hs[max(corpuspos-1, 0)])-float(Hs[corpuspos]))),
                                   str(outputguesses)]))
         else:
-            print(args.csep.join([str(word), str(sentid), str(corpuspos), str(len(word)),
+            file.write(args.csep.join([str(word), str(sentid), str(corpuspos), str(len(word)),
                                   str(float(surp)), str(float(Hs[corpuspos])),
                                   str(max(0, float(Hs[max(corpuspos-1, 0)])-float(Hs[corpuspos])))]))
 
@@ -476,7 +476,7 @@ def test_evaluate(test_sentences, data_source):
                 nwords += 1
                 if input_word != '<eos>': # not in (input_word,targ_word):
                     if args.verbose_view_layer:
-                        out.write("\n"+input_word,end=" ")
+                        out.write("\n"+input_word)
                     # don't output <eos> markers to align with input
                     # output raw activations
                     if args.view_hidden:
