@@ -481,17 +481,17 @@ def test_evaluate(test_sentences, data_source):
                     # output raw activations
                     if args.view_hidden:
                         # output hidden state
-                        out.write("\n"+(*list(hidden[0][args.view_layer].view(1, -1).data.cpu().numpy().flatten())))
+                        print(*list(hidden[0][args.view_layer].view(1, -1).data.cpu().numpy().flatten()), sep=' ')
 
                     elif args.view_emb:
                         #Get embedding for input word
                         emb = model.encoder(word_input)
                         # output embedding
-                        out.write("\n"+(*list(emb[0].view(1,-1).data.cpu().numpy().flatten())))
+                        print(*list(emb[0].view(1,-1).data.cpu().numpy().flatten()), sep=' ')
 
                     else:
                         # output cell state
-                        out.write("\n"+(*list(hidden[1][args.view_layer].view(1, -1).data.cpu().numpy().flatten())))
+                        print(*list(hidden[1][args.view_layer].view(1, -1).data.cpu().numpy().flatten()), sep=' ')
         else:
             data = data.unsqueeze(1) # only needed when a single sentence is being processed
             output, hidden = model(data, hidden)
