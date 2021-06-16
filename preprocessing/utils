@@ -1,0 +1,21 @@
+from numpy.random import binomial
+
+def create_mixed_corpus(first_language, second_language, output, bias_towards_english, size):
+
+    count = 0
+    outf = open(output,"w")
+    with open(first_language,'rt') as e, open(second_language, 'rt') as d:
+        for english_sent, dutch_sent in zip(e, d):
+            if binomial(1,bias_towards_english):
+                outf.write(english_sent)
+            else:
+                outf.write(dutch_sent)
+            count += 1
+            if count%100000==0:
+                print(count)
+            if count > size:
+                break
+    outf.close()
+english = "corpora/english/"
+dutch = "corpora/dutch/"
+create_mixed_corpus(english + "train.txt", dutch + "train.txt", "train.txt", 0.5, 1622969)
