@@ -503,7 +503,7 @@ def test_evaluate(test_sentences, data_source):
             total_loss += loss.item()
             if args.words:
                 # output word-level complexity metrics
-                get_complexity(output_flat, targets, i, out)
+                get_complexity(output_flat, targets, i)
             else:
                 # output sentence-level loss
                 if test_sentences:
