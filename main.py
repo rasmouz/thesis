@@ -336,7 +336,7 @@ def get_guessscores(state):
     ''' Wrapper that returns top-k guesses of given vector '''
     return get_guesses(state, True)
 
-def get_complexity(state, obs, sentid, file=None):
+def get_complexity(state, obs, sentid):
     ''' Generates complexity output for given state, observation, and sentid '''
     Hs = torch.log2(torch.exp(torch.squeeze(apply(get_entropy, state))))
     surps = torch.log2(torch.exp(apply(get_surps, state)))
@@ -369,12 +369,12 @@ def get_complexity(state, obs, sentid, file=None):
                     outputguesses.append("{:.3f}".format(
                         math.exp(float(nn.functional.log_softmax(guessscores[corpuspos], dim=0)[guess_ix]))))
             outputguesses = args.csep.join(outputguesses)
-            file.write('\n'+args.csep.join([str(word), str(sentid), str(corpuspos), str(len(word)),
+            print('\n'+args.csep.join([str(word), str(sentid), str(corpuspos), str(len(word)),
                                   str(float(surp)), str(float(Hs[corpuspos])),
                                   str(max(0, float(Hs[max(corpuspos-1, 0)])-float(Hs[corpuspos]))),
                                   str(outputguesses)]))
         else:
-            file.write('\n'+args.csep.join([str(word), str(sentid), str(corpuspos), str(len(word)),
+            print('\n'+args.csep.join([str(word), str(sentid), str(corpuspos), str(len(word)),
                                   str(float(surp)), str(float(Hs[corpuspos])),
                                   str(max(0, float(Hs[max(corpuspos-1, 0)])-float(Hs[corpuspos])))]))
 
@@ -433,22 +433,21 @@ def test_evaluate(test_sentences, data_source):
         sys.stderr.write('Using beamsize: '+str(ntokens)+'\n')
     else:
         sys.stderr.write('Using beamsize: '+str(args.complexn)+'\n')
-    out = open(args.outfname, 'w')
     if args.words:
         if not args.nocheader:
             if args.complexn == ntokens:
-                out.write('word{0}sentid{0}sentpos{0}wlen{0}surp{0}entropy{0}entred'.format(args.csep))
+                print('word{0}sentid{0}sentpos{0}wlen{0}surp{0}entropy{0}entred'.format(args.csep), end='')
             else:
-                out.write('word{0}sentid{0}sentpos{0}wlen{0}surp{1}{0}entropy{1}{0}entred{1}'.format(args.csep, args.complexn))
+                print('word{0}sentid{0}sentpos{0}wlen{0}surp{1}{0}entropy{1}{0}entred{1}'.format(args.csep, args.complexn), end='')
             if args.guess:
                 for i in range(args.guessn):
-                    out.write('\n{0}guess'.format(args.csep)+str(i))
+                    print('\n{0}guess'.format(args.csep)+str(i), end='')
                     if args.guessscores:
-                        out.write('\n{0}gscore'.format(args.csep)+str(i))
+                        print('\n{0}gscore'.format(args.csep)+str(i), end='')
                     elif args.guessprobs:
-                        out.write('\n{0}gprob'.format(args.csep)+str(i))
+                        print('\n{0}gprob'.format(args.csep)+str(i), end='')
                     elif args.guessratios:
-                        out.write('\n{0}gratio'.format(args.csep)+str(i))
+                        print('\n{0}gratio'.format(args.csep)+str(i), end='')
             sys.stdout.write('\n')
     if PROGRESS:
         bar = Bar('Processing', max=len(data_source))
@@ -476,7 +475,7 @@ def test_evaluate(test_sentences, data_source):
                 nwords += 1
                 if input_word != '<eos>': # not in (input_word,targ_word):
                     if args.verbose_view_layer:
-                        out.write("\n"+input_word)
+                        print(input_word, end=" ")
                     # don't output <eos> markers to align with input
                     # output raw activations
                     if args.view_hidden:
@@ -498,7 +497,7 @@ def test_evaluate(test_sentences, data_source):
             try:
                 output_flat = output.view(-1, ntokens)
             except RuntimeError:
-                out.write("\n"+"Vocabulary Error! Most likely there weren't unks in training and unks are now needed for testing")
+                print("Vocabulary Error! Most likely there weren't unks in training and unks are now needed for testing")
                 raise
             loss = criterion(output_flat, targets)
             total_loss += loss.item()
@@ -508,9 +507,9 @@ def test_evaluate(test_sentences, data_source):
             else:
                 # output sentence-level loss
                 if test_sentences:
-                    out.write("\n"+str(sent)+":"+str(loss.item()))
+                    print(str(sent)+":"+str(loss.item()))
                 else:
-                    out.write("\n"+str(loss.item()))
+                    print(str(loss.item()))
 
             if args.adapt:
                 loss.backward()
@@ -532,7 +531,6 @@ def test_evaluate(test_sentences, data_source):
         return total_loss / nwords
     else:
         return total_loss / len(data_source)
-    out.close()
 
 def evaluate(data_source):
     """ Evaluate for validation (no adaptation, no complexity output) """
