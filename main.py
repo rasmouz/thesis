@@ -36,8 +36,10 @@ parser = argparse.ArgumentParser(description='PyTorch RNN/LSTM Language Model')
 
 # Model parameters
 parser.add_argument('--model', type=str, default='LSTM',
-                    choices=['RNN_TANH', 'RNN_RELU', 'LSTM', 'GRU'],
+                    choices=['RNN_TANH', 'RNN_RELU', 'LSTM', 'GRU', 'TRANSFORMER'],
                     help='type of recurrent net')
+parser.add_argument('--nhead', type=int, default=2,
+                    help='number of heads for tranformer model')
 parser.add_argument('--emsize', type=int, default=200,
                     help='size of word embeddings')
 parser.add_argument('--nhid', type=int, default=200,
@@ -154,6 +156,7 @@ parser.add_argument('--softcliptopk', action="store_true",
                     help='soften non top-k options instead of removing them')
 
 args = parser.parse_args()
+tra = (args.model=='TRANSFORMER')
 
 if args.interact:
     # If in interactive mode, force complexity output
@@ -246,6 +249,7 @@ if not args.interact:
             if args.validfname2 is not None:
                 val_data2 = batchify(corpus.valid2, args.batch_size)
 
+
 ###############################################################################
 # Build/load the model
 ###############################################################################
@@ -261,10 +265,14 @@ if not args.test and not args.interact:
                 model = torch.load(f, map_location='cpu')
     else:
         ntokens = len(corpus.dictionary)
-        model = model.RNNModel(args.model, ntokens, args.emsize, args.nhid,
-                               args.nlayers, embedding_file=args.embedding_file,
-                               dropout=args.dropout, tie_weights=args.tied,
-                               freeze_embedding=args.freeze_embedding).to(device)
+        if args.model != 'TRANSFORMER':
+            model = model.RNNModel(args.model, ntokens, args.emsize, args.nhid,
+                                   args.nlayers, embedding_file=args.embedding_file,
+                                   dropout=args.dropout, tie_weights=args.tied,
+                                   freeze_embedding=args.freeze_embedding).to(device)
+        else:
+            model = model.TransformerModel(ntokens, args.emsize, args.nhead, args.nhid,
+                                    args.nlayers, dropout=args.dropout).to(device)
 
     if args.cuda and (not args.single) and (torch.cuda.device_count() > 1):
         # If applicable, use multi-gpu for training
@@ -275,7 +283,8 @@ if not args.test and not args.interact:
         model = model.module
     # after load the rnn params are not a continuous chunk of memory
     # this makes them a continuous chunk, and will speed up forward pass
-    model.rnn.flatten_parameters()
+    if args.model != 'TRANSFORMER':
+        model.rnn.flatten_parameters()
 
 criterion = nn.CrossEntropyLoss()
 
@@ -456,20 +465,33 @@ def test_evaluate(test_sentences, data_source):
         # We predict all words but the first, so determine loss for those
         if test_sentences:
             sent = test_sentences[i]
-        hidden = model.init_hidden(1) # number of parallel sentences being processed
         data, targets = test_get_batch(sent_ids)
+        if tra:
+            src_mask = model.generate_square_subsequent_mask(data.size(0)).to(device)
+        else:
+            hidden = model.init_hidden(1) # number of parallel sentences being processed
         if args.view_layer >= 0:
+            if tra:
+                raise Exception("not yet implemented")
             for word_index in range(data.size(0)):
                 # Starting each batch, detach the hidden state
-                hidden = repackage_hidden(hidden)
+
+                if not tra:
+                    hidden = repackage_hidden(hidden)
+
                 model.zero_grad()
 
                 word_input = data[word_index].unsqueeze(0).unsqueeze(1)
                 target = targets[word_index].unsqueeze(0)
+                if tra:
+
+                    output = model(word_input, src_mask)
+
                 output, hidden = model(word_input, hidden)
                 output_flat = output.view(-1, ntokens)
                 loss = criterion(output_flat, target)
                 total_loss += loss.item()
+
                 input_word = corpus.dictionary.idx2word[int(word_input.data)]
                 targ_word = corpus.dictionary.idx2word[int(target.data)]
                 nwords += 1
@@ -493,7 +515,10 @@ def test_evaluate(test_sentences, data_source):
                         print(*list(hidden[1][args.view_layer].view(1, -1).data.cpu().numpy().flatten()), sep=' ')
         else:
             data = data.unsqueeze(1) # only needed when a single sentence is being processed
-            output, hidden = model(data, hidden)
+            if tra:
+                output = model(data, src_mask)
+            else:
+                output, hidden = model(data, hidden)
             try:
                 output_flat = output.view(-1, ntokens)
             except RuntimeError:
@@ -520,8 +545,8 @@ def test_evaluate(test_sentences, data_source):
                     if param.grad is not None:
                     # only update trainable parameters
                         param.data.add_(-lr, param.grad.data)
-
-        hidden = repackage_hidden(hidden)
+        if not tra:
+            hidden = repackage_hidden(hidden)
 
         if PROGRESS:
             bar.next()
@@ -538,14 +563,23 @@ def evaluate(data_source):
     model.eval()
     total_loss = 0.
     ntokens = len(corpus.dictionary)
-    hidden = model.init_hidden(args.batch_size)
+    if tra:
+        src_mask = model.generate_square_subsequent_mask(args.bptt).to(device)
+    else:
+        hidden = model.init_hidden(args.batch_size)
     with torch.no_grad():
         for i in range(0, data_source.size(0) - 1, args.bptt):
             data, targets = get_batch(data_source, i)
-            output, hidden = model(data, hidden)
+            if tra:
+                if data.size(0) != args.bptt:
+                    src_mask = model.generate_square_subsequent_mask(data.size(0)).to(device)
+                output = model(data, src_mask)
+            else:
+                output, hidden = model(data, hidden)
             output_flat = output.view(-1, ntokens)
             total_loss += len(data) * criterion(output_flat, targets).item()
-            hidden = repackage_hidden(hidden)
+            if not tra:
+                hidden = repackage_hidden(hidden)
     return total_loss / len(data_source)
 
 def train():
@@ -554,15 +588,24 @@ def train():
     model.train()
     total_loss = 0.
     start_time = time.time()
+    if tra:
+        src_mask = model.generate_square_subsequent_mask(args.bptt).to(device)
+    else:
+        hidden = model.init_hidden(args.batch_size)
     ntokens = len(corpus.dictionary)
-    hidden = model.init_hidden(args.batch_size)
     for batch, i in enumerate(range(0, train_data.size(0) - 1, args.bptt)):
         data, targets = get_batch(train_data, i)
         # Starting each batch, we detach the hidden state from how it was previously produced.
         # If we didn't, the model would try backpropagating all the way to start of the dataset.
-        hidden = repackage_hidden(hidden)
+        if not tra:
+            hidden = repackage_hidden(hidden)
+        if tra and data.size(0) != args.bptt:
+            src_mask = model.generate_square_subsequent_mask(data.size(0)).to(device)
         model.zero_grad()
-        output, hidden = model(data, hidden)
+        if tra:
+            output = model(data, src_mask)
+        else:
+            output, hidden = model(data, hidden)
         loss = criterion(output.view(-1, ntokens), targets)
         loss.backward()
 
@@ -659,7 +702,8 @@ elif not args.pre_validate:
         if isinstance(model, torch.nn.DataParallel):
             # if multi-gpu, access real model for testing
             model = model.module
-        model.rnn.flatten_parameters()
+        if not tra:
+            model.rnn.flatten_parameters()
 
     # Run on test data.
     if args.interact:
