@@ -40,6 +40,9 @@ parser.add_argument('--model', type=str, default='LSTM',
                     help='type of recurrent net')
 parser.add_argument('--nhead', type=int, default=2,
                     help='number of heads for tranformer model')
+parser.add_argument('--optimizer', type=str, default=None,
+                    choices=[None, 'Adam'],
+                    help='pick an optimizer')
 parser.add_argument('--emsize', type=int, default=200,
                     help='size of word embeddings')
 parser.add_argument('--nhid', type=int, default=200,
@@ -273,7 +276,16 @@ if not args.test and not args.interact:
         else:
             model = model.TransformerModel(ntokens, args.emsize, args.nhead, args.nhid,
                                     args.nlayers, dropout=args.dropout).to(device)
-
+            #print(model.pos_encoder.pe.shape)
+        """
+        pytorch_total_params = sum(p.numel() for p in model.parameters())
+        print('here',pytorch_total_params)
+        print('ok')
+        for param in model.parameters():
+            if True:#param.requires_grad:
+                print(param.name, param.data.shape)
+        raise Exception("lol")
+        """
     if args.cuda and (not args.single) and (torch.cuda.device_count() > 1):
         # If applicable, use multi-gpu for training
         # Scatters minibatches (in dim=1) across available GPUs
@@ -287,6 +299,10 @@ if not args.test and not args.interact:
         model.rnn.flatten_parameters()
 
 criterion = nn.CrossEntropyLoss()
+if args.optimizer is not None:
+    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 1.0, gamma=0.95)
+
 
 ###############################################################################
 # Complexity measures
@@ -611,10 +627,13 @@ def train():
 
         # `clip_grad_norm` helps prevent the exploding gradient problem in RNNs / LSTMs.
         torch.nn.utils.clip_grad_norm(model.parameters(), args.clip)
-        for param in model.parameters():
-            if param.grad is not None:
-                # only update trainable parameters
-                param.data.add_(-lr, param.grad.data)
+        if args.optimizer is not None:
+            optimizer.step()
+        else:
+            for param in model.parameters():
+                if param.grad is not None:
+                    # only update trainable parameters
+                    param.data.add_(-lr, param.grad.data)
 
         total_loss += loss.item()
 
@@ -637,7 +656,7 @@ def train():
             else:
                 elapsed = time.time() - start_time
                 print('| epoch {:3d} | {:5d}/{:5d} batches | lr {:02.2f} | ms/batch {:5.2f} | '
-                      ' train ppl {:8.2f}'.format(
+                      ' train loss {:8.2f}'.format(
                           epoch, batch, len(train_data) // args.bptt, lr,
                           elapsed * 1000 / args.log_interval, math.exp(cur_loss)))
             total_loss = 0.
@@ -679,7 +698,10 @@ if not args.test and not args.interact and not args.pre_validate:
                 if no_improvement >= 3:
                     print('Covergence achieved! Ending training early')
                     break
-                lr /= 4.0
+                if args.optimizer is None:
+                    lr /= 4.0
+            if args.optimizer is not None:
+                scheduler.step()
     except KeyboardInterrupt:
         print('-' * 89)
         print('Exiting from training early')
